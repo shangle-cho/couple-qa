@@ -1,0 +1,506 @@
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Secret 365 - 둘만의 비밀 문답</title>
+  
+  <!-- 스마트폰 홈 화면 및 브라우저 탭 하트 아이콘 (SVG Data-URI) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%23E11D48'/><stop offset='100%' stop-color='%23881337'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='%23121014'/><path d='M50 82s-30-18-30-38c0-11 9-20 20-20 6 0 12 3 10 9 0-6 4-9 10-9 11 0 20 9 20 20 0 20-30 38-30 38z' fill='url(%23g)'/></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%23E11D48'/><stop offset='100%' stop-color='%23881337'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='%23121014'/><path d='M50 82s-30-18-30-38c0-11 9-20 20-20 6 0 12 3 10 9 0-6 4-9 10-9 11 0 20 9 20 20 0 20-30 38-30 38z' fill='url(%23g)'/></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --bg: #121014;
+      --card-bg: #1D1822;
+      --card-inner: #27212E;
+      --accent-wine: #9D2235;
+      --accent-rose: #E11D48;
+      --accent-gold: #F59E0B;
+      --text-main: #F3EEF5;
+      --text-muted: #9E94A6;
+      --border: #3A3144;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app-wrap {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 상단 헤더 */
+    .header-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--accent-rose);
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .role-selector {
+      display: flex;
+      background: var(--card-inner);
+      padding: 3px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+    .role-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .role-btn.active {
+      background: var(--accent-wine);
+      color: #FFF;
+      box-shadow: 0 2px 8px rgba(225, 29, 72, 0.4);
+    }
+
+    /* 날짜 네비게이션 */
+    .day-nav-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-arrow {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .day-title-wrap { text-align: center; }
+    .day-badge {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--accent-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .date-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* 질문 카드 */
+    .question-card {
+      background: linear-gradient(145deg, #2A1724 0%, #17131B 100%);
+      border: 1px solid #5C2339;
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    .q-number {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--accent-rose);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .q-text {
+      font-size: 17.5px;
+      font-weight: 700;
+      line-height: 1.5;
+      color: #FFF;
+      word-break: keep-all;
+    }
+
+    /* 답변 입력 카드 */
+    .input-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .input-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .answer-textarea {
+      width: 100%;
+      min-height: 95px;
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 14.5px;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+    }
+    .answer-textarea:focus { border-color: var(--accent-rose); }
+    .btn-submit {
+      background: linear-gradient(135deg, #9D2235 0%, #E11D48 100%);
+      color: white;
+      border: none;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 14.5px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35);
+      transition: all 0.2s;
+    }
+    .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
+
+    /* 결과 카드 */
+    .result-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .answer-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .box-header {
+      font-size: 13.5px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .box-header.him { color: #60A5FA; }
+    .box-header.her { color: #F472B6; }
+
+    .box-content {
+      font-size: 14.5px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: var(--text-main);
+    }
+
+    /* 잠김 오버레이 */
+    .locked-state {
+      background: var(--card-inner);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 24px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .lock-heart-icon {
+      font-size: 26px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.1); opacity: 1; }
+    }
+
+    .toast-msg {
+      text-align: center;
+      font-size: 12px;
+      color: var(--accent-gold);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrap">
+    <!-- 헤더 -->
+    <header class="header-card">
+      <div class="brand-title">💖 SECRET 365</div>
+      <div class="role-selector">
+        <button class="role-btn active" id="roleBtnHim" onclick="setRole('him')">💙 그의 시선</button>
+        <button class="role-btn" id="roleBtnHer" onclick="setRole('her')">💗 그녀의 시선</button>
+      </div>
+    </header>
+
+    <!-- 날짜 네비게이션 -->
+    <div class="day-nav-card">
+      <button class="nav-arrow" onclick="moveDay(-1)">◀</button>
+      <div class="day-title-wrap">
+        <div class="day-badge" id="dayDisplay">💌 DAY 1 / 365</div>
+        <div class="date-sub" id="calendarDateDisplay">오늘의 질문</div>
+      </div>
+      <button class="nav-arrow" onclick="moveDay(1)">▶</button>
+    </div>
+
+    <!-- 질문 카드 -->
+    <div class="question-card">
+      <div class="q-number" id="qNumberTag">💖 QUESTION #1</div>
+      <div class="q-text" id="qContent">질문을 불러오는 중입니다...</div>
+    </div>
+
+    <!-- 내 답변 작성 -->
+    <div class="input-card">
+      <div class="input-header">
+        <span id="currentRoleLabel">✍️ 그의 솔직한 대답</span>
+        <span id="myStatusBadge" style="color:var(--accent-gold);">🤍 미작성</span>
+      </div>
+      <textarea class="answer-textarea" id="answerInput" placeholder="상대방에게만 털어놓는 솔직한 속마음을 적어보세요..."></textarea>
+      <button class="btn-submit" onclick="submitAnswer()">💖 답변 등록하고 마음 열기</button>
+      <div class="toast-msg">※ 두 사람 모두 등록해야 서로의 답변 내용이 열립니다.</div>
+    </div>
+
+    <!-- 블라인드 해제 결과 -->
+    <div class="result-section">
+      <!-- 그의 대답 -->
+      <div class="answer-box">
+        <div class="box-header him">💙 그의 속마음</div>
+        <div id="himContentWrap"></div>
+      </div>
+
+      <!-- 그녀의 대답 -->
+      <div class="answer-box">
+        <div class="box-header her">💗 그녀의 속마음</div>
+        <div id="herContentWrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = { 
+      apiKey: "AIzaSyCnRI1qFnvKIgFQ0PJQ_Jj85pOPK7UdlNQ",
+      databaseURL: "https://y-planner-67ba4-default-rtdb.firebaseio.com",
+      projectId: "y-planner-67ba4"
+    };
+
+    let db = null;
+    let currentRole = 'him';
+    let currentDayIndex = 1;
+    let dayDataCache = {};
+
+    const questionsPool = [
+      "처음 서로의 눈을 깊게 마주쳤을 때, 머릿속을 스친 가장 은밀한 첫인상은 무엇이었나요?",
+      "단둘이 있을 때, 상대방의 몸 중 유독 시선이 멈추거나 닿고 싶어지는 부위는 어디인가요?",
+      "일상 속에서 상대방이 문득 가장 치명적이거나 섹시하게 느껴졌던 찰나의 순간은?",
+      "다른 사람은 절대 모르는, 우리 둘만의 비밀스러운 스킨십 신호나 버릇을 만든다면?",
+      "단둘이 조용한 곳에 갇히게 된다면, 가장 먼저 해보고 싶은 과감한 행동은?",
+      "상대방의 숨소리, 목소리 톤 중에서 내 심장을 유독 내려앉게 만드는 순간이 있다면?",
+      "내 나이와 위치를 모두 잊고, 상대방 앞에서 한없이 대담해지고 싶었던 순간이 있나요?",
+      "둘만의 여행지 밤, 불이 다 꺼진 방에서 속삭이고 싶은 가장 진솔하고 뜨거운 고백은?",
+      "상대방이 나를 지그시 바라볼 때, 내 안에서 일어나는 가장 본능적인 감정은?",
+      "손끝이 스치는 것만으로도 온몸에 전율이 흘렀던 기억이 있나요? 그때의 기분은?",
+      "상대방에게 꼭 한 번 입혀보고 싶거나, 내 앞에서만 보여주었으면 하는 매력적인 모습은?",
+      "서로를 안았을 때 코끝에 닿는 상대방의 살결 냄새나 온도는 나에게 어떤 느낌을 주나요?",
+      "아무도 없는 차 안, 은밀한 정적 속에서 문득 떠올렸던 아찔한 상상이 있다면?",
+      "상대방의 입술이 내 목덜미나 귓가에 닿는다면, 가장 먼저 들릴 것 같은 내 반응은?",
+      "세상 모든 책임을 뒤로하고, 오직 서로의 감각에만 온전히 집중하고 싶은 완벽한 하룻밤은?",
+      "상대방이 먼저 적극적으로 다가올 때와, 내가 먼저 리드할 때 중 어느 쪽에 더 흥분되나요?",
+      "나조차 낯설 만큼 상대방에게 깊게 빠져들었다고 느꼈던 결정적 계기는 무엇인가요?",
+      "둘만의 은밀한 아지트가 생긴다면, 그곳에서 가장 자주 나누고 싶은 둘만의 의식은?",
+      "상대방에게 들었을 때 가장 묘하게 가슴을 울리고 붉어지게 만들었던 칭찬이나 말은?",
+      "지금 당장 단둘만 남겨진다면, 망설임 없이 건네고 싶은 첫 번째 스킨십은?"
+    ];
+
+    function getTodayDayOfYear() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      const diff = now - start;
+      const oneDay = 1000 * 60 * 60 * 24;
+      return Math.floor(diff / oneDay);
+    }
+
+    function init() {
+      currentDayIndex = getTodayDayOfYear();
+      if (currentDayIndex < 1) currentDayIndex = 1;
+      if (currentDayIndex > 365) currentDayIndex = 365;
+
+      const savedRole = localStorage.getItem('secret_couple_role');
+      if (savedRole) currentRole = savedRole;
+      updateRoleUI();
+
+      try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        loadDayData(currentDayIndex);
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    function setRole(role) {
+      currentRole = role;
+      localStorage.setItem('secret_couple_role', role);
+      updateRoleUI();
+      renderUI();
+    }
+
+    function updateRoleUI() {
+      document.getElementById('roleBtnHim').className = 'role-btn' + (currentRole === 'him' ? ' active' : '');
+      document.getElementById('roleBtnHer').className = 'role-btn' + (currentRole === 'her' ? ' active' : '');
+      document.getElementById('currentRoleLabel').innerText = 
+        currentRole === 'him' ? '✍️ 그의 솔직한 대답' : '✍️ 그녀의 솔직한 대답';
+    }
+
+    function moveDay(step) {
+      currentDayIndex += step;
+      if (currentDayIndex < 1) currentDayIndex = 365;
+      if (currentDayIndex > 365) currentDayIndex = 1;
+      loadDayData(currentDayIndex);
+    }
+
+    function getQuestionText(day) {
+      const idx = (day - 1) % questionsPool.length;
+      return questionsPool[idx];
+    }
+
+    function loadDayData(day) {
+      document.getElementById('dayDisplay').innerText = `💌 DAY ${day} / 365`;
+      document.getElementById('qNumberTag').innerText = `💖 QUESTION #${day}`;
+      document.getElementById('qContent').innerText = getQuestionText(day);
+
+      if (!db) return;
+
+      db.ref(`secret_couples_qa/day_${day}`).on('value', (snapshot) => {
+        dayDataCache = snapshot.val() || {};
+        renderUI();
+      });
+    }
+
+    function renderUI() {
+      const himAns = dayDataCache.him || "";
+      const herAns = dayDataCache.her || "";
+
+      const myAnswer = (currentRole === 'him') ? himAns : herAns;
+      const inputEl = document.getElementById('answerInput');
+      inputEl.value = myAnswer;
+
+      const myStatusEl = document.getElementById('myStatusBadge');
+      if (myAnswer.trim()) {
+        myStatusEl.innerText = "💖 작성 완료";
+        myStatusEl.style.color = "#F472B6";
+      } else {
+        myStatusEl.innerText = "🤍 미작성";
+        myStatusEl.style.color = "var(--accent-gold)";
+      }
+
+      const bothAnswered = (himAns.trim().length > 0 && herAns.trim().length > 0);
+
+      // 그의 답변
+      const himWrap = document.getElementById('himContentWrap');
+      if (bothAnswered) {
+        himWrap.innerHTML = `<div class="box-content">${escapeHtml(himAns)}</div>`;
+      } else if (currentRole === 'him' && himAns.trim().length > 0) {
+        himWrap.innerHTML = `<div class="box-content">${escapeHtml(himAns)}</div>`;
+      } else {
+        himWrap.innerHTML = `
+          <div class="locked-state">
+            <span class="lock-heart-icon">🤍</span>
+            <span>두 사람 모두 답변을 남겨야 하트가 열립니다.</span>
+          </div>`;
+      }
+
+      // 그녀의 답변
+      const herWrap = document.getElementById('herContentWrap');
+      if (bothAnswered) {
+        herWrap.innerHTML = `<div class="box-content">${escapeHtml(herAns)}</div>`;
+      } else if (currentRole === 'her' && herAns.trim().length > 0) {
+        herWrap.innerHTML = `<div class="box-content">${escapeHtml(herAns)}</div>`;
+      } else {
+        herWrap.innerHTML = `
+          <div class="locked-state">
+            <span class="lock-heart-icon">🤍</span>
+            <span>두 사람 모두 답변을 남겨야 하트가 열립니다.</span>
+          </div>`;
+      }
+    }
+
+    function submitAnswer() {
+      const text = document.getElementById('answerInput').value.trim();
+      if (!text) {
+        alert("마음을 담은 솔직한 답변을 먼저 적어주세요. 💖");
+        return;
+      }
+
+      if (!db) {
+        alert("데이터베이스 연결을 확인해주세요.");
+        return;
+      }
+
+      const updates = {};
+      updates[currentRole] = text;
+      updates[`${currentRole}_updatedAt`] = Date.now();
+
+      db.ref(`secret_couples_qa/day_${currentDayIndex}`).update(updates)
+        .then(() => {
+          alert("답변이 안전하게 등록되었습니다! 💖");
+        })
+        .catch(err => {
+          console.error(err);
+          alert("저장 중 오류가 발생했습니다.");
+        });
+    }
+
+    function escapeHtml(string) {
+      if (!string) return "";
+      return String(string)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    init();
+  </script>
+</body>
+</html>
